@@ -19,3 +19,10 @@ rate_estimater.cc
 Some parameters need to be set according to system ability in rate_estimater.h and rate_estimater.cc
 
 This is work of Key Laboratory of DEKE, MOE, China from School of Information, Renmin University of China
+
+### How to build CruiseDB
+```shell
+make static_lib -j$(nproc)
+sudo DEBUG_LEVEL=0 make uninstall
+sudo DEBUG_LEVEL=0 make install
+```

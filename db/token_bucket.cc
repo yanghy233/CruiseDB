@@ -77,7 +77,7 @@ TokenBucket::~TokenBucket() {
 void TokenBucket::Begin(int code, DBImpl* db_handle) {
   MutexLock mu(&request_mutex_);
   assert(valid_ == code - 1);
-  std::cout<<"TokenBucket\t"<<cfd_->GetName()<<"\tBegin\t"<<code<<std::endl;
+  std::cout<<"[TokenBucket::Begin] Initialize TokenBucket, stage_code: "<< code <<", CF: "<< cfd_->GetName() <<std::endl;
   valid_ = code;
   if (valid_ >= 3) {
     assert(false);
