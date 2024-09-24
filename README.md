@@ -23,6 +23,7 @@ This is work of Key Laboratory of DEKE, MOE, China from School of Information, R
 ### How to build CruiseDB
 ```shell
 make static_lib -j$(nproc)
+make shared_lib -j$(nproc)
 sudo DEBUG_LEVEL=0 make uninstall
 sudo DEBUG_LEVEL=0 make install
 ```
