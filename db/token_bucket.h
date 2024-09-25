@@ -72,28 +72,52 @@ class TokenBucket {
 
         int valid_;
 
+        // 令牌桶的填充速率(字节/秒)
         long long rate_bytes_per_sec_;
+
+        // 令牌桶的填充周期(微秒)
         const long long refill_period_us_;
 
+        // 填充周期内填充的总字节数
         long long refill_bytes_per_period_;
+
+        // 填充周期内最小填充字节数
         const long long kMinRefillBytesPerPeriod = 100;
 
         bool stop_;
         port::CondVar exit_cv_;
+
+        // 表示需要等待的请求数量
         int requests_to_wait_;
 
+        // 当前可用的字节数
         long long available_bytes_;
+
+        // 下次填充的时间（微秒）
         long long next_refill_us_;
 
+        // 互斥锁，用于保护对令牌桶状态的访问
         mutable port::Mutex request_mutex_;
+
+        // 总请求数
         long long total_requests_;
+
+        // 总通过的字节数
         long long total_bytes_through_;
 
+        // 存储等待的条件变量
         std::queue<port::CondVar*> queue_;
 
+        // 调整周期
         int tune_period_;
+
+        // 上次调整的时间
         long long tune_time_;
+
+        // 上次调整时的字节数
         long long tune_bytes_;
+
+        //用于估算速率
         RateEstimater* rate_estimater_;
         bool ShouldTune();
 

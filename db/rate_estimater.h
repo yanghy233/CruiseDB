@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <deque>
 #include <atomic>
+#include <deque>
 
 namespace rocksdb {
 
@@ -11,61 +11,60 @@ class ColumnFamilyData;
 class DBImpl;
 
 class RateEstimater {
-	public:
-		RateEstimater(ColumnFamilyData* cfd);
-		RateEstimater(ColumnFamilyData* cfd, long long initial_rate);
+ public:
+  RateEstimater(ColumnFamilyData* cfd);
+  RateEstimater(ColumnFamilyData* cfd, long long initial_rate);
 
-		~RateEstimater();
+  ~RateEstimater();
 
-		long long Estimate(double last_rate);
+  long long Estimate(double last_rate);
 
-		void Record_Request(int type, long long bytes, long long time);
+  void Record_Request(int type, long long bytes, long long time);
 
-		void SetDBHandle(DBImpl* db_handle) {
-			db_handle_ = db_handle;
-			return;
-		}
+  void SetDBHandle(DBImpl* db_handle) {
+    db_handle_ = db_handle;
+    return;
+  }
 
-	private:
-		long long ColdBegin();
-		long long LimitedSpeed();
+ private:
+  long long ColdBegin();
+  long long LimitedSpeed();
 
-		long long NowTime(){
-            struct timeval tv;
-            gettimeofday(&tv, nullptr);
-            return (long long)(tv.tv_sec)*1000000 + tv.tv_usec;
-        };
+  long long NowTime() {
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return (long long)(tv.tv_sec) * 1000000 + tv.tv_usec;
+  };
 
-		struct Record {
-			long long time;
-			double score[8];
-			long long rate;
-			long long last;
-			double ratio;
+  struct Record {
+    long long time;
+    double score[8];
+    long long rate;
+    long long last;
+    double ratio;
 
-			Record():time(0),rate(0),last(0),ratio(-1) {
-				for(int i=0;i<8;++i)score[i]=0;
-			}
+    Record() : time(0), rate(0), last(0), ratio(-1) {
+      for (int i = 0; i < 8; ++i) score[i] = 0;
+    }
 
-			double max_score() {
-				double ret=0;
-				for(int i=0;i<8;++i)
-					if(score[i]>ret)
-						ret=score[i];
-				return ret;
-			}
-		};
+    double max_score() {
+      double ret = 0;
+      for (int i = 0; i < 8; ++i)
+        if (score[i] > ret) ret = score[i];
+      return ret;
+    }
+  };
 
-		double k1=0.5,k2=0.4;
+  double k1 = 0.5, k2 = 0.4;
 
-		ColumnFamilyData* cfd_;
-		DBImpl* db_handle_;
+  ColumnFamilyData* cfd_;
+  DBImpl* db_handle_;
 
-		std::deque<Record> records_;
+  std::deque<Record> records_;
 
-		long long now_rate_;
+  long long now_rate_;
 
-		std::atomic<long long>read_bytes_, write_bytes_, read_time_, write_time_;
+  std::atomic<long long> read_bytes_, write_bytes_, read_time_, write_time_;
 };
 
-}
+}  // namespace rocksdb

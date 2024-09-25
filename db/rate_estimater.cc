@@ -11,10 +11,10 @@
 
 #define MAX_RECORDS 100000
 #define MIN_INTERVAL 1000000
-#define MIN_START_RATE 1024
+#define MIN_START_RATE 1024 * 1024 * 60         // B/s
 #define DISK_RATE 1024*1024*50
-#define DEFAULT_LIMITED_SPEED 1024 * 1024 * 2047 // 2GB/s
-#define MAX_LIMITED_SPEED 1024*1024*400
+#define DEFAULT_LIMITED_SPEED 1024 * 1024 * 60 // B/s
+#define MAX_LIMITED_SPEED 1024*1024*400       // B/s
 #define MIN_TUNE_RATIO 0.5
 #define MAX_TUNE_RATIO 1.5
 
@@ -194,8 +194,11 @@ long long RateEstimater::ColdBegin() {
 	} else {
 		ret = (read_bytes_+write_bytes_) / ((read_time_+write_time_)/1000000.0);
 	}
-	std::cout<<"ColdBegin Result:\t"<<(ret>>20)<<"MB/s"<<std::endl;
-	if(ret<MIN_START_RATE)ret = MIN_START_RATE;
+	std::cout<<"ColdBegin Result: "<<(ret>>20)<<"MB/s"<<std::endl;
+	if(ret<MIN_START_RATE){
+          ret = MIN_START_RATE;
+          std::cout << "cold to min start rate: "<< (ret>>20) <<"MB/s" << std::endl;
+        }
 	return ret;
 }
 
@@ -206,7 +209,10 @@ long long RateEstimater::LimitedSpeed() {
 	long long cache_write = re_statistics->getTickerCount(BLOCK_CACHE_BYTES_WRITE);
 	long long bytes_read = re_statistics->getTickerCount(BYTES_READ);
 
-	if(bytes_read + write_bytes_ == 0) return DEFAULT_LIMITED_SPEED;
+	if(bytes_read + write_bytes_ == 0) {
+          std::cout << "Default Limited Speed: " << (DEFAULT_LIMITED_SPEED>>20) << "MB/s" << std::endl;
+          return DEFAULT_LIMITED_SPEED;
+        }
 
 	long long comp_read = 0, comp_write = 0;
 	InternalStats* internal_stats = cfd_->internal_stats();
@@ -232,8 +238,11 @@ long long RateEstimater::LimitedSpeed() {
 		coff += write_ratio*comp_read/write_bytes_ + write_ratio*comp_write/write_bytes_;
 	}
 	long long ret = disk_rate/coff;
-	std::cout<<"LimitedSpeed Result:\t"<<(ret>>20)<<"MB/s"<<std::endl;
-	if (ret > MAX_LIMITED_SPEED) ret = MAX_LIMITED_SPEED;
+	std::cout<<"LimitedSpeed Result: "<<(ret>>20)<<"MB/s"<<std::endl;
+	if (ret > MAX_LIMITED_SPEED) {
+          ret = MAX_LIMITED_SPEED;
+          std::cout<<"Limited to MAX speed: "<<(ret>>20)<<"MB/s"<<std::endl;
+        }
 	return ret;
 }
 
