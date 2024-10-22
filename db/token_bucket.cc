@@ -8,7 +8,7 @@
 
 namespace rocksdb {
 
-#define TUNE_PERIOD 300000
+#define TUNE_PERIOD 300000      // 每有 30万个请求进行一次速率调整
 
 TokenBucket::TokenBucket(ColumnFamilyData* cfd,
                          long long rate_bytes_per_sec,
@@ -74,6 +74,7 @@ TokenBucket::~TokenBucket() {
   if (rate_estimater_) delete rate_estimater_;
 }
 
+// 入口
 void TokenBucket::Begin(int code, DBImpl* db_handle) {
   MutexLock mu(&request_mutex_);
   assert(valid_ == code - 1);
@@ -89,16 +90,19 @@ void TokenBucket::Begin(int code, DBImpl* db_handle) {
   return;
 }
 
+// 设置当前估算出来的新的速率
 void TokenBucket::SetBytesPerSecond(long long bytes_per_second) {
   assert(bytes_per_second > 0);
   rate_bytes_per_sec_ = bytes_per_second;
   refill_bytes_per_period_ = CalculateRefillBytesPerPeriod(bytes_per_second);
 }
 
+// 检查是否需要调整速率
 bool TokenBucket::ShouldTune() {
   return (rate_estimater_ && total_requests_ > 0 && total_requests_ % tune_period_ == 0);
 }
 
+// 请求令牌
 void TokenBucket::Request(long long bytes) {
   if (valid_ < 2) {
     return;
@@ -158,6 +162,7 @@ void TokenBucket::Request(long long bytes) {
   return;
 }
 
+// 记录请求信息
 void TokenBucket::Record(int type, long long bytes, long long begin_time) {
   assert(type == 0 || type ==1);
   assert(bytes > 0);
@@ -168,6 +173,7 @@ void TokenBucket::Record(int type, long long bytes, long long begin_time) {
   return;
 }
 
+// 计算每个周期的补充字节数 ( default : 100ms )
 long long TokenBucket::CalculateRefillBytesPerPeriod(long long rate_bytes_per_sec) {
   if (port::kMaxInt64 / rate_bytes_per_sec < refill_period_us_) {
     return port::kMaxInt64 / 1000000;
@@ -177,6 +183,7 @@ long long TokenBucket::CalculateRefillBytesPerPeriod(long long rate_bytes_per_se
   }
 }
 
+// 补充令牌
 void TokenBucket::Refill() {
   next_refill_us_ = NowTime() + refill_period_us_;
   if (available_bytes_ < refill_bytes_per_period_) {

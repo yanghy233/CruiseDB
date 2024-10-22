@@ -2572,6 +2572,7 @@ Status DBImpl::DropColumnFamilyImpl(ColumnFamilyHandle* column_family) {
   return s;
 }
 
+// start to control
 Status DBImpl::TbBegin(ColumnFamilyHandle* column_family, int code) {
   auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
   auto cfd = cfh->cfd();

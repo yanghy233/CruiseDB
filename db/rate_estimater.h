@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <deque>
+#include <sys/time.h>
 
 namespace rocksdb {
 
@@ -30,6 +31,7 @@ class RateEstimater {
   long long ColdBegin();
   long long LimitedSpeed();
 
+  // 获取当前时间的微秒数 us
   long long NowTime() {
     struct timeval tv;
     gettimeofday(&tv, nullptr);

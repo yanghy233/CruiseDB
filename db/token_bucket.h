@@ -10,7 +10,7 @@
 
 namespace rocksdb {
 
-#define DEFAULT_REFILL_PERIOD (100 * 1000)
+#define DEFAULT_REFILL_PERIOD (100 * 1000)  // 100ms
 
 class ColumnFamilyData;
 class RateEstimater;

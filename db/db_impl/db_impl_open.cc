@@ -1364,10 +1364,12 @@ Status DBImpl::CreateWAL(uint64_t log_file_num, uint64_t recycle_log_number,
   return s;
 }
 
+// column_families 包含 default column family
 Status DBImpl::Open(const DBOptions& db_options, const std::string& dbname,
                     const std::vector<ColumnFamilyDescriptor>& column_families,
                     std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
                     const bool seq_per_batch, const bool batch_per_txn) {
+    // 验证和清理选项
   Status s = SanitizeOptionsByTable(db_options, column_families);
   if (!s.ok()) {
     return s;
@@ -1381,13 +1383,17 @@ Status DBImpl::Open(const DBOptions& db_options, const std::string& dbname,
   *dbptr = nullptr;
   handles->clear();
 
+    // 找出配置里最大的写缓冲区大小
   size_t max_write_buffer_size = 0;
   for (auto cf : column_families) {
     max_write_buffer_size =
         std::max(max_write_buffer_size, cf.options.write_buffer_size);
   }
 
+    // 创建 DBImpl 实例
   DBImpl* impl = new DBImpl(db_options, dbname, seq_per_batch, batch_per_txn);
+
+    // 创建 WAL 目录和所有必要的目录
   s = impl->env_->CreateDirIfMissing(impl->immutable_db_options_.wal_dir);
   if (s.ok()) {
     std::vector<std::string> paths;
