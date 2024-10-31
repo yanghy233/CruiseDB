@@ -15,6 +15,7 @@
 #define MAX_RECORDS 100000
 #define MIN_INTERVAL 1000000        // 微秒，间隔 1s, 间隔之内请求预测值不变
 #define MIN_START_RATE 1024 * 1024 * 60  // B/s
+//#define DISK_RATE 1024 * 1024 * 300
 #define DISK_RATE 1024 * 1024 * 50
 #define DEFAULT_LIMITED_SPEED 1024 * 1024 * 400  // B/s
 #define MAX_LIMITED_SPEED 1024 * 1024 * 400      // B/s
@@ -133,71 +134,42 @@ namespace rocksdb {
         // Strategy
         now_rate_ = last_rate;
 
-        /* 	if (new_rec.max_score()>last_rec.max_score()+1){
-                        now_rate_ = LimitedSpeed();
-                        new_rec.reason = 1;
-                } else if (new_rec.score[0]<2) {
-                        if (new_rec.max_score()<last_rec.max_score()-0.5) {
-                                        now_rate_ = now_rate_ * speed::RAPID_GROW;
-                                        new_rec.reason = 2;
-                        } else if (new_rec.max_score()<last_rec.max_score()) {
-                                        now_rate_ = now_rate_ * speed::QUICK_GROW;
-                                        new_rec.reason = 3;
-                        } else if (new_rec.max_score()<last_rec.max_score()+0.25) {
-                                        now_rate_ = now_rate_ * speed::GROW;
-                                        new_rec.reason = 4;
-                        } else if (new_rec.max_score()<last_rec.max_score()+0.5) {
-                                        now_rate_ = now_rate_ * speed::KEEP;
-                                        new_rec.reason = 5;
-                        } else {
-                                now_rate_ = now_rate_ * speed::DECLINE;
-                                new_rec.reason = 6;
-                        }
-                } else if (new_rec.score[0]<3) {
-                        if (new_rec.max_score()>last_rec.max_score()+0.5) {
-                                now_rate_ = now_rate_ * speed::QUICK_DECLINE;
-                                new_rec.reason = 7;
-                        } else if (new_rec.max_score()>last_rec.max_score()+0.25) {
-                                now_rate_ = now_rate_ * speed::DECLINE;
-                                new_rec.reason = 8;
-                        } else if (new_rec.max_score()>last_rec.max_score()) {
-                                now_rate_ = now_rate_ * speed::SLOW_DECLINE;
-                                new_rec.reason = 9;
-                        } else {
-                                now_rate_ = now_rate_ * speed::KEEP;
-                                new_rec.reason = 10;
-                        }
-                } else {
-                        now_rate_ = LimitedSpeed();
-                        new_rec.reason = 11;
-                } */
-
         double ratio = 1.0;
 
         // 如果0级分数过高，使用限制速度
-        if (new_rec.score[0] > 3) {
-            now_rate_ = LimitedSpeed();
-            new_rec.ratio = -1;
-        } else if (new_rec.max_score() - last_rec.max_score() > 2) {
-            // 如果最大的那层分数增加过快，使用限制速度
-            now_rate_ = LimitedSpeed();
-            new_rec.ratio = -2;
-        } else {
-            // 新的 ratio = 1 - k1 * (L0的分数 - 1.5) / 3.0 - k2 * (新的最大那层分数 - 上次最大那层分数) / 5.0
-            ratio = 1 - k1 * (new_rec.score[0] - 1.5) / 3.0 -
-                    k2 * (new_rec.max_score() - last_rec.max_score()) / 5.0;
-            new_rec.ratio = ratio;
-            // ratio < 0.5，使用限制速度
-            if (ratio < MIN_TUNE_RATIO) {
-                now_rate_ = LimitedSpeed();
-            } else if (ratio > MAX_TUNE_RATIO) {
-                // ratio > 1.5，使用 coldBegin
-                now_rate_ = ColdBegin();
-            } else {
-                // current_rate = last_rate * ratio
-                now_rate_ = now_rate_ * ratio;
-            }
-        }
+//        if (new_rec.score[0] > 3) {
+//            std::cout << "[CruiseDB] level 0 score too high, use limited speed" << std::endl;
+//            now_rate_ = LimitedSpeed();
+//            new_rec.ratio = -1;
+//        } else if (new_rec.max_score() - last_rec.max_score() > 2) {
+//            std::cout << "[CruiseDB] max score increase too fast, use limited speed" << std::endl;
+//            // 如果最大的那层分数增加过快，使用限制速度
+//            now_rate_ = LimitedSpeed();
+//            new_rec.ratio = -2;
+//        } else {
+//            // 新的 ratio = 1 - k1 * (L0的分数 - 1.5) / 3.0 - k2 * (新的最大那层分数 - 上次最大那层分数) / 5.0
+//            ratio = 1 - k1 * (new_rec.score[0] - 1.5) / 3.0 -
+//                    k2 * (new_rec.max_score() - last_rec.max_score()) / 5.0;
+//            std::cout << "[CruiseDB] ratio: " << ratio << std::endl;
+//            new_rec.ratio = ratio;
+//            // ratio < 0.5，使用限制速度
+//            if (ratio < MIN_TUNE_RATIO) {
+//                now_rate_ = LimitedSpeed();
+//            } else if (ratio > MAX_TUNE_RATIO) {
+//                // ratio > 1.5，使用 coldBegin
+//                now_rate_ = ColdBegin();
+//            } else {
+//                // current_rate = last_rate * ratio
+//                now_rate_ = now_rate_ * ratio;
+//            }
+//            std::cout << "[CruiseDB] new rate: " << now_rate_ << std::endl;
+//        }
+
+
+//        now_rate_ = (now_rate_ * ratio * 30) / (20 + vsinfo->NumLevelFiles(0));
+        now_rate_ = (now_rate_ * ratio * 48) / (40 + vsinfo->NumLevelFiles(0));
+        std::cout << "[CruiseDB] last rate = " << last_rate << ", new rate = " << now_rate_ << ", L0 file num = " << vsinfo->NumLevelFiles(0) << std::endl;
+
 
         // set new rate
         new_rec.rate = now_rate_;
@@ -249,7 +221,7 @@ namespace rocksdb {
 
     // 本质是计算论文的 Tc
     long long RateEstimater::LimitedSpeed() {
-        std::cout << "LimitedSpeed Called!" << std::endl;
+        std::cout << "start to limit...." << std::endl;
         long long disk_rate = DISK_RATE;
         assert(re_statistics);
 

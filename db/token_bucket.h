@@ -58,6 +58,7 @@ class TokenBucket {
     private:
         void Refill();
 
+        // 获取当前时间戳(微秒) us
         long long NowTime() const {
             struct timeval tv;
             gettimeofday(&tv, nullptr);
@@ -110,6 +111,8 @@ class TokenBucket {
 
         // 调整周期
         int tune_period_;
+
+        long long start_time_;
 
         // 上次调整的时间
         long long tune_time_;

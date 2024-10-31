@@ -8,7 +8,9 @@
 
 namespace rocksdb {
 
-#define TUNE_PERIOD 300000      // 每有 30万个请求进行一次速率调整
+//#define TUNE_PERIOD 300000      // 每有 30万个请求进行一次速率调整
+// #define TUNE_PERIOD 64000
+ #define TUNE_PERIOD 200000
 
 TokenBucket::TokenBucket(ColumnFamilyData* cfd,
                          long long rate_bytes_per_sec,
@@ -86,6 +88,7 @@ void TokenBucket::Begin(int code, DBImpl* db_handle) {
     rate_estimater_->SetDBHandle(db_handle);
     SetBytesPerSecond(rate_estimater_->Estimate(-1));
     tune_time_ = NowTime();
+    start_time_ = NowTime();
   }
   return;
 }
@@ -121,6 +124,16 @@ void TokenBucket::Request(long long bytes) {
   if (ShouldTune()) {
     assert(rate_estimater_);
     SetBytesPerSecond(rate_estimater_->Estimate((total_bytes_through_-tune_bytes_)/((NowTime()-tune_time_)/1000000.0)));
+
+//    SetBytesPerSecond(total_bytes_through_/((NowTime()-start_time_)/1000000.0));
+//      std::cout << "[CruiseDB] duration bytes = " << total_bytes_through_ << std::endl;
+//      std::cout << "[CruiseDB] new_rate = " << total_bytes_through_/((NowTime()-start_time_)/1000000.0) << std::endl;
+
+//    SetBytesPerSecond((total_bytes_through_-tune_bytes_)/((NowTime()-tune_time_)/1000000.0));
+//    std::cout << "[CruiseDB] duration bytes = " << (total_bytes_through_-tune_bytes_) << std::endl;
+//    std::cout << "[CruiseDB] new_rate = " << (total_bytes_through_-tune_bytes_)/((NowTime()-tune_time_)/1000000.0) << std::endl;
+
+//    SetBytesPerSecond(600000000);
     tune_time_ = NowTime();
     tune_bytes_ = total_bytes_through_;
   }

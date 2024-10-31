@@ -2269,10 +2269,11 @@ void VersionStorageInfo::EstimateCompactionBytesNeeded(
 
   uint64_t bytes_compact_to_next_level = 0;
   uint64_t level_size = 0;
+  // level 0 total bytes
   for (auto* f : files_[0]) {
     level_size += f->fd.GetFileSize();
   }
-  // Level 0
+  // Level 0, if started to compact or level 0 is full, pendingBytes += level0 all files size
   bool level0_compact_triggered = false;
   if (static_cast<int>(files_[0].size()) >=
           mutable_cf_options.level0_file_num_compaction_trigger ||

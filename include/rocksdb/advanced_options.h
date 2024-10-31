@@ -42,17 +42,23 @@ enum CompactionStyle : char {
 // kMinOverlappingRatio first when you tune your database.
 enum CompactionPri : char {
   // Slightly prioritize larger files by size compensated by #deletes
+  // 选择含有删除标记最多的 SST 进行合并
+  // 有利于减小空间放大
   kByCompensatedSize = 0x0,
   // First compact files whose data's latest update time is oldest.
   // Try this if you only update some hot keys in small ranges.
+  // 尽可能让热键保留在上层 SST，总是选择当前层最冷的 SST 与下层进行合并
   kOldestLargestSeqFirst = 0x1,
   // First compact files whose range hasn't been compacted to the next level
   // for the longest. If your updates are random across the key space,
   // write amplification is slightly better with this option.
+  // 总是选取当前层中最早到达这层的 SST，与下层进行合并，因为该 SST 包含最密集的键范围
+  // 能减少写放大（一般不用）
   kOldestSmallestSeqFirst = 0x2,
   // First compact files whose ratio between overlapping size in next level
   // and its size is the smallest. It in many cases can optimize write
   // amplification.
+  // 选取与下层重叠比例最小的 SST 进行合并
   kMinOverlappingRatio = 0x3,
 };
 
